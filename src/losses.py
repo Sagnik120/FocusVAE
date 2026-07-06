@@ -17,7 +17,8 @@ LOG2 = 0.6931471805599453  # ln(2), for converting nats -> bits
 
 
 def reconstruction_loss(recon, target):
-    return F.mse_loss(recon, target, reduction="mean")
+    se = F.mse_loss(recon, target, reduction="none")
+    return se.flatten(1).sum(dim=1).mean()
 
 
 def kl_per_location(mu, logvar):
