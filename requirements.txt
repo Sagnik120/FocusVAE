@@ -1,0 +1,13 @@
+torch>=2.2
+torchvision>=0.17
+transformers>=4.40
+Pillow
+numpy
+pandas
+scikit-image
+tqdm
+pyyaml
+matplotlib
+gradio
+huggingface_hub
+kaggle

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+data/celeba/
+checkpoints/
+results/
+*.pt
+*.ckpt
+.ipynb_checkpoints/
+.kaggle/
+wandb/
