@@ -1,0 +1,14 @@
+model: vanilla
+data_root: data/celeba
+image_size: 64
+base_ch: 32
+feat_ch: 128
+z_ch: 16
+beta: 1.0
+batch_size: 64
+epochs: 20
+lr: 0.0003
+num_workers: 4
+seed: 0
+ckpt_dir: checkpoints/vanilla
+log_every: 50

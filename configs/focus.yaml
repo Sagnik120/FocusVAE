@@ -1,0 +1,16 @@
+model: focus
+data_root: data/celeba
+image_size: 64
+base_ch: 32
+feat_ch: 128
+z_ch: 16
+beta_min: 0.1
+beta_max: 8.0
+clip_name: openai/clip-vit-base-patch32
+batch_size: 64
+epochs: 20
+lr: 0.0003
+num_workers: 4
+seed: 0
+ckpt_dir: checkpoints/focus
+log_every: 50
