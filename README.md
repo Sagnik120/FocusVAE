@@ -139,8 +139,60 @@ python scripts/push_to_hub.py --repo Sagnik120/focus-vae --ckpt checkpoints/focu
 ```
 
 ## Results
-_Fill in after training on your machine — `evaluate.py` writes a
+## Results
+
+| Model | Overall PSNR | Overall SSIM | bpp | Region-restricted PSNR |
+|---|---|---|---|---|
+| VanillaVAE (baseline) | 19.15 | 0.527 | 0.0402 | 19.03 |
+| FocusVAE | 19.24 | 0.533 | 0.0423 | 18.98 |
+
+At a near-matched bit budget (1.05x baseline), FocusVAE showed **no
+region-quality advantage** over the uniform-beta baseline — a finding that
+led to discovering a real bug in the relevance mechanism (see below).
+Results above predate the fix and are being retrained; updated numbers
+will replace this table.
+`evaluate.py` writes a
 `results/comparison.md` table you can paste here._
+
+
+## Debugging journal — a real posterior collapse and a real reward hack
+
+Two bugs surfaced during training that are worth documenting honestly
+rather than papering over:
+
+**1. Posterior collapse from loss-scale mismatch.**
+The reconstruction loss originally averaged MSE over all pixels
+(`reduction="mean"`) while the KL term summed over all latent dimensions —
+putting KL roughly 1000x larger in scale. The optimizer exploited this by
+collapsing the latent to the prior and ignoring the image entirely
+(overall PSNR ~11dB, both models produced near-identical blurry-average
+output regardless of input). Fixed by summing reconstruction error per
+sample instead of averaging, matching KL's scale (`src/losses.py`).
+
+**2. Relevance-map collapse (reward hacking).**
+After fixing (1), FocusVAE trained and reconstructed real content, but four
+rounds of beta-budget tuning showed its region-PSNR advantage over the
+baseline shrinking in lockstep with the bpp gap — and vanishing entirely
+once bpp was matched. Diagnosing the relevance map directly
+(`relevance.std()` across spatial locations) showed it had saturated to a
+near-constant ~1.0 everywhere (std ~1e-4). The learnable temperature `tau`
+in the original `sigmoid(tau * cos_sim)` formulation could grow unbounded,
+and the optimizer discovered it could minimize the KL penalty uniformly by
+pushing relevance to 1.0 everywhere — completely defeating the point of
+query conditioning, while every earlier "FocusVAE wins" result was really
+just measuring a global beta value in disguise.
+
+Fixed by replacing the sigmoid threshold with **per-image min-max
+normalization**, which structurally forces every relevance map to span
+[0, 1] and makes global collapse mathematically impossible
+(`src/models/focus_vae.py`).
+
+This is a useful reminder that a model "training successfully" (loss going
+down, no NaNs, reasonable-looking reconstructions) doesn't mean every
+component is doing what it's designed to do — the relevance-conditioning
+mechanism was silently dead for several training runs despite the overall
+pipeline looking completely healthy.
+
 
 ## Status / roadmap
 - [x] Data pipeline + query templates
