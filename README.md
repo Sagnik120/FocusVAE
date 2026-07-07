@@ -194,14 +194,5 @@ mechanism was silently dead for several training runs despite the overall
 pipeline looking completely healthy.
 
 
-## Status / roadmap
-- [x] Data pipeline + query templates
-- [x] Baseline spatial VAE
-- [x] CLIP-conditioned relevance map + spatial-beta FocusVAE
-- [x] Evaluation (overall + region-restricted)
-- [x] Gradio demo
-- [ ] Push weights to Hugging Face Hub
-- [ ] (stretch) Try COCO captions instead of CelebA attributes for open-vocabulary queries
-
 ## License
 MIT — see `LICENSE`.
