@@ -34,16 +34,22 @@ class FocusVAE(nn.Module):
 
         self.beta_min = beta_min
         self.beta_max = beta_max
-        self.log_tau = nn.Parameter(torch.tensor(2.0))  # tau = exp(log_tau)
-
+        
     def relevance_map(self, feat, queries):
-        """feat: [B, feat_ch, H, W] -> relevance: [B, H, W] in [0, 1]"""
-        q_emb = self.query_encoder(queries)                     # [B, feat_ch]
-        feat_n = F.normalize(feat, dim=1)                        # [B, feat_ch, H, W]
-        q_n = F.normalize(q_emb, dim=1).unsqueeze(-1).unsqueeze(-1)  # [B, feat_ch, 1, 1]
-        cos_sim = (feat_n * q_n).sum(dim=1)                       # [B, H, W]
-        tau = self.log_tau.exp()
-        return torch.sigmoid(tau * cos_sim)                      # [B, H, W]
+        """feat: [B, feat_ch, H, W] -> relevance: [B, H, W] in [0, 1], per-image
+        min-max normalized so the map is forced to have spatial contrast and
+        can't collapse to a global constant (which the sigmoid version could,
+        and did, cheat toward to minimize the KL penalty uniformly)."""
+        q_emb = self.query_encoder(queries)
+        feat_n = F.normalize(feat, dim=1)
+        q_n = F.normalize(q_emb, dim=1).unsqueeze(-1).unsqueeze(-1)
+        cos_sim = (feat_n * q_n).sum(dim=1)                        # [B, H, W]
+
+        flat = cos_sim.flatten(1)                                   # [B, H*W]
+        lo = flat.min(dim=1, keepdim=True).values
+        hi = flat.max(dim=1, keepdim=True).values
+        relevance = (flat - lo) / (hi - lo + 1e-6)
+        return relevance.view_as(cos_sim)                  # [B, H, W]
 
     def forward(self, x, queries, **kwargs):
         feat, mu, logvar = self.encoder(x)
