@@ -4,8 +4,8 @@ image_size: 64
 base_ch: 32
 feat_ch: 128
 z_ch: 16
-beta_min: 0.7
-beta_max: 25.0
+beta_min: 0.9
+beta_max: 32.0
 clip_name: openai/clip-vit-base-patch32
 batch_size: 64
 epochs: 20
