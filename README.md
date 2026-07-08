@@ -37,47 +37,10 @@ Bandwidth- and storage-constrained vision pipelines — edge cameras, satellite 
 ## Architecture
 
 <div align="center">
-
-<!--
-  PLACE THE GENERATED ARCHITECTURE DIAGRAM HERE, e.g.:
-  <img src="assets/focusvae_architecture.png" alt="FocusVAE Architecture Diagram" width="850">
-
-  See "Architecture diagram - generation prompt" below for the exact prompt
-  used to generate this figure. Save the image to assets/focusvae_architecture.png
-  and uncomment the line above once it's ready.
--->
-
-*(architecture diagram goes here — see generation prompt below)*
-
+<img src="assets/focusvae_architecture.png" alt="FocusVAE Architecture Diagram" width="850">
 </div>
 
 **In one paragraph:** an input image passes through a fully-convolutional encoder that produces a *spatial* latent grid (8×8 locations, not one flattened vector). In parallel, the query text is embedded by a frozen CLIP text encoder and projected into the same channel space as the encoder's feature map. Cosine similarity between the projected query embedding and every spatial location of the feature map produces a relevance map, which is min-max normalized per image. That relevance map is turned into a spatially-varying β (low β where relevant → weak KL penalty → more information kept; high β elsewhere → strong penalty → aggressive compression), which weights the KL term of the ELBO independently at every latent location before the (reparameterized) latent grid is decoded back into a reconstruction.
-
-### Architecture diagram — generation prompt
-
-Use the following prompt with an image generation tool to produce `assets/focusvae_architecture.png`:
-
-> Create a clean, professional, technical machine-learning architecture diagram in a modern flat vector style, suitable for a GitHub README and a research paper figure. White background, minimal drop shadows, rounded rectangles for modules, thin arrows for data flow, a restrained color palette (slate blue, teal, soft orange for the "query" pathway, gray for frozen/non-trainable components). Landscape orientation, roughly 1600×900px.
->
-> Layout, left to right, two parallel input branches merging into a shared pipeline:
->
-> **Top-left branch (image pathway):** A small icon of a 64×64 face photo labeled "Input Image (64×64×3)" feeds into a box labeled "Convolutional Encoder" containing three smaller stacked sub-blocks labeled "Conv 4×4 s2 → 32ch", "Conv 4×4 s2 → 64ch", "Conv 4×4 s2 → 128ch" (each downsampling, shown with a shrinking grid icon 64→32→16→8). This outputs into a labeled tensor block "Feature Map [128, 8, 8]".
->
-> **Bottom-left branch (query pathway, colored soft orange to visually separate it):** A speech-bubble icon containing the example text "is the person smiling?" feeds into a box labeled "CLIP Text Encoder (frozen, ViT-B/32)" — draw this box with a lock icon and a gray/dashed border to indicate it is frozen and not trained. Its output arrow is labeled "512-d embedding" and feeds into a small trainable box labeled "Projection Head (Linear + LayerNorm, trainable)" outputting "128-d embedding", drawn with a solid colored border to contrast with the frozen CLIP box.
->
-> **Fusion point:** Both the "Feature Map [128, 8, 8]" and the "128-d query embedding" feed into a box labeled "Cosine Similarity (per spatial location)" which outputs an 8×8 heatmap icon (a small grid with a red-to-blue color gradient, hotter near where a mouth would be on a face silhouette overlay) labeled "Relevance Map [8, 8]". An arrow from this heatmap goes into a box labeled "Per-Image Min-Max Normalize → [0,1]".
->
-> The normalized relevance map then feeds into a box labeled "β(h,w) = β_max − (β_max−β_min)·relevance" drawn as a small formula card, producing a "Spatial β Map [16, 8, 8]" tensor icon, shown as an 8×8 grid colored from dark purple (high β / heavy compression) to bright yellow (low β / more bits kept) — make this gradient visually match the same hot region as the relevance heatmap above it, to make the "query points here → more bits here" idea visually obvious at a glance.
->
-> **Latent branch:** The original "Feature Map [128, 8, 8]" also feeds separately into two parallel small boxes labeled "μ (mean) [16, 8, 8]" and "logvar [16, 8, 8]" (1×1 convolutions), which combine via a "Reparameterization (z = μ + σ·ε)" box into "Latent z [16, 8, 8]".
->
-> **KL term:** Draw a dashed box off to the side labeled "KL(q(z|x) ‖ p(z))" receiving arrows from both μ/logvar and from the "Spatial β Map", merging into a small labeled output "Weighted Rate Loss (bits-per-pixel)" — visually distinct (dashed border, slightly desaturated) to indicate this is a loss-computation path, not a forward-inference path.
->
-> **Decoder branch:** "Latent z [16, 8, 8]" flows into a box labeled "Convolutional Decoder" with three stacked sub-blocks mirroring the encoder ("Deconv 4×4 s2 → 64ch", "Deconv 4×4 s2 → 32ch", "Deconv 4×4 s2 → 3ch, Sigmoid") with a growing grid icon 8→16→32→64, finally outputting a reconstructed 64×64 face icon labeled "Reconstruction (64×64×3)" next to a small "Reconstruction Loss (MSE)" tag comparing it back to the original input image icon with a dashed comparison arrow.
->
-> Add a small legend box in the bottom-right corner with three swatches: a solid-border box labeled "Trainable", a gray dashed-border box labeled "Frozen (CLIP)", and an orange-tinted region labeled "Query-conditioned pathway". Add a subtle caption beneath the whole diagram in a light gray small font: "FocusVAE — query-conditioned spatial rate allocation via a min-max normalized CLIP relevance map".
->
-> Overall aesthetic: think of a polished figure from a deep learning systems paper (in the visual style of diagrams from Papers With Code or a NeurIPS architecture figure) — precise, uncluttered, legible at both full size and as a small README thumbnail.
 
 ---
 
